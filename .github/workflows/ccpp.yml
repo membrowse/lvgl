@@ -102,6 +102,35 @@ jobs:
       run: . /opt/esp/idf/export.sh && idf.py set-target esp32s3
     - name: Build
       run: . /opt/esp/idf/export.sh && idf.py build
+    - name: Upload ELF artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: esp32s3-elf
+        path: |
+          build/hello_world.elf
+          build/esp-idf/esp_system/ld/memory.ld
+
+  analyze-memory-esp32s3:
+    needs: build-esp32s3
+    runs-on: ubuntu-24.04
+    name: Memory Analysis - ESP32S3
+    steps:
+    - name: Download ELF artifact
+      uses: actions/download-artifact@v6
+      with:
+        name: esp32s3-elf
+    - name: Analyze Memory with MemBrowse
+      id: membrowse
+      uses: membrowse/membrowse-action@main
+      with:
+        elf: hello_world.elf
+        ld: "esp-idf/esp_system/ld/memory.ld"
+        target_name: esp32s3-lvgl
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: membrowse/membrowse-action/comment-action@main
+      with:
+        report_path: ${{ steps.membrowse.outputs.report_path }}
 
   test-native:
     runs-on: ubuntu-24.04
