@@ -121,16 +121,17 @@ jobs:
         name: esp32s3-elf
     - name: Analyze Memory with MemBrowse
       id: membrowse
-      uses: membrowse/membrowse-action@main
+      uses: membrowse/membrowse-action@v1
       with:
-        elf: hello_world.elf
-        ld: "esp-idf/esp_system/ld/memory.ld"
+        elf: build/hello_world.elf
+        ld: "build/esp-idf/esp_system/ld/memory.ld"
         target_name: esp32s3-lvgl
-    - name: Comment on PR
-      if: github.event_name == 'pull_request'
-      uses: membrowse/membrowse-action/comment-action@main
+    - name: Upload report artifact
+      if: success()
+      uses: actions/upload-artifact@v6
       with:
-        report_path: ${{ steps.membrowse.outputs.report_path }}
+        name: membrowse-report-esp32s3-lvgl
+        path: ${{ steps.membrowse.outputs.report_path }}
 
   test-native:
     runs-on: ubuntu-24.04
