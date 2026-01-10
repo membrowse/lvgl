@@ -1,0 +1,12 @@
+[
+  {
+    "target_name": "esp32s3",
+    "port": "esp",
+    "board": "esp32s3",
+    "setup_cmd": "echo 'Using ESP-IDF container'",
+    "build_cmd": ". /opt/esp/idf/export.sh && idf.py set-target esp32s3 && idf.py build",
+    "elf": "build/hello_world.elf",
+    "ld": "",
+    "linker_vars": ""
+  }
+]
