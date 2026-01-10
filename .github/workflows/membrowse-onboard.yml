@@ -1,0 +1,55 @@
+name: Onboard to Membrowse
+
+on:
+  workflow_dispatch:
+    inputs:
+      num_commits:
+        description: 'Number of commits to process'
+        required: true
+        default: '100'
+        type: string
+
+jobs:
+  onboard:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout LVGL
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ESP-IDF
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget flex bison gperf python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+          git clone -b v5.3.1 --depth 1 --recursive https://github.com/espressif/esp-idf.git /home/runner/esp-idf
+          /home/runner/esp-idf/install.sh esp32s3
+
+      - name: Run Membrowse Onboard Action
+        uses: membrowse/membrowse-action/onboard-action@v1
+        with:
+          target_name: esp32s3
+          num_commits: ${{ github.event.inputs.num_commits }}
+          build_script: |
+            source /home/runner/esp-idf/export.sh
+            rm -rf /home/runner/esp-project
+            mkdir -p /home/runner/esp-project/components
+            cp -r . /home/runner/esp-project/components/lvgl
+            cp -r /home/runner/esp-idf/examples/get-started/hello_world/* /home/runner/esp-project/
+            cd /home/runner/esp-project
+            idf.py set-target esp32s3
+            idf.py build
+            mkdir -p /home/runner/work/lvgl/lvgl/build/esp-idf/esp_system/ld
+            cp build/hello_world.elf /home/runner/work/lvgl/lvgl/build/hello_world.elf
+            cp build/esp-idf/esp_system/ld/memory.ld /home/runner/work/lvgl/lvgl/build/esp-idf/esp_system/ld/memory.ld
+          elf: build/hello_world.elf
+          ld: build/esp-idf/esp_system/ld/memory.ld
+          linker_vars: ""
+          api_key: ${{ secrets.MEMBROWSE_API_KEY }}
+          api_url: ${{ vars.MEMBROWSE_API_URL }}
